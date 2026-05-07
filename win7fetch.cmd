@@ -84,17 +84,21 @@ echo gpuName = "Unknown GPU"
 echo resX = ""
 echo resY = ""
 echo For Each objVideo in colVideo
-echo     If Not IsNull^(objVideo.CurrentHorizontalResolution^) Then
-echo         gpuName = objVideo.Name
+echo     gpuName = objVideo.Name
+echo     If Not IsNull^(objVideo.CurrentHorizontalResolution^) And objVideo.CurrentHorizontalResolution ^<^> "" Then
 echo         resX = objVideo.CurrentHorizontalResolution
 echo         resY = objVideo.CurrentVerticalResolution
 echo         Exit For
 echo     End If
 echo Next
 echo If resX = "" Then
-echo     For Each objVideo in colVideo
-echo         gpuName = objVideo.Name
-echo         Exit For
+echo     Set colDisplay = objWMIService.ExecQuery^("Select PelsWidth, PelsHeight from Win32_DisplayConfiguration"^)
+echo     For Each objDisp in colDisplay
+echo         If Not IsNull^(objDisp.PelsWidth^) And objDisp.PelsWidth ^<^> "" Then
+echo             resX = objDisp.PelsWidth
+echo             resY = objDisp.PelsHeight
+echo             Exit For
+echo         End If
 echo     Next
 echo End If
 echo uptimeStr = "Unknown"
@@ -139,10 +143,11 @@ set "ENABLE_COLOR=0"
 if "%WT_SESSION%" neq "" set "ENABLE_COLOR=1"
 if "%TERM%" neq "" set "ENABLE_COLOR=1"
 
-:: Check Windows Version (Major version >= 10 usually supports ANSI natively)
-for /f "tokens=1-3 delims=." %%a in ("%win_ver%") do (
-    if %%a gtr 9 set "ENABLE_COLOR=1"
-)
+set "win_build_num=0"
+if not "%win_build%"=="" set "win_build_num=%win_build%"
+
+:: Check Windows Version (Major version >= 10, i.e. build >= 10240, usually supports ANSI natively)
+if %win_build_num% gtr 10000 set "ENABLE_COLOR=1"
 
 :: Process command line overrides
 if "%~1"=="--color" set "ENABLE_COLOR=1"
@@ -185,17 +190,15 @@ if not "%temp_str%"=="" (
 
 :: Detect Windows Version Category for Logo selection
 set "WIN_LOGO_TYPE=WIN7"
-for /f "tokens=1-3 delims=." %%a in ("%win_ver%") do (
-    if "%%a"=="5" (
-        set "WIN_LOGO_TYPE=WIN7"
-    ) else if "%%a"=="6" (
-        if "%%b"=="2" set "WIN_LOGO_TYPE=WIN10"
-        if "%%b"=="3" set "WIN_LOGO_TYPE=WIN10"
-    ) else if %%a gtr 9 (
-        if !win_build! gtr 21999 (
-            set "WIN_LOGO_TYPE=WIN11"
-        ) else (
-            set "WIN_LOGO_TYPE=WIN10"
+if %win_build_num% gtr 21999 (
+    set "WIN_LOGO_TYPE=WIN11"
+) else if %win_build_num% gtr 10000 (
+    set "WIN_LOGO_TYPE=WIN10"
+) else (
+    for /f "tokens=1-3 delims=." %%a in ("%win_ver%") do (
+        if "%%a"=="6" (
+            if "%%b"=="2" set "WIN_LOGO_TYPE=WIN10"
+            if "%%b"=="3" set "WIN_LOGO_TYPE=WIN10"
         )
     )
 )
@@ -251,21 +254,21 @@ goto :logo_done
 
 :logo_win7
 set "L1=%RED%        ,.=:^^!^^!t3Z3z.,                    %RST%"
-set "L2=%RED%       :tt:::tt333EE3                   %RST%"
+set "L2=%RED%       :tt:::tt333EE3                    %RST%"
 set "L3=%RED%       Et:::ztt33EEEL%GRN% @Ee.,      ..,     %RST%"
-set "L4=%RED%      ;tt:::tt333EE7%GRN% ;EEEEEEttttt33# %RST%"
-set "L5=%RED%     :Et:::zt333EEQ.%GRN% $EEEEEttttt33QL %RST%"
-set "L6=%RED%     it::::tt333EEF%GRN% @EEEEEEttttt33F %RST%"
-set "L7=%RED%    ;3=*^```"*4EEV%GRN% :EEEEEEttttt33@.   %RST%"
-set "L8=%BLU%    ,.=::::^^!t=., %RED%`%GRN% @EEEEEEtttz33QF  %RST%"
-set "L9=%BLU%   ;::::::::zt33)%GRN%   "4EEEtttji3P*     %RST%"
-set "L10=%BLU%  :t::::::::tt33.%YLW%:Z3z..%GRN%  ``%YLW% ,..g.       %RST%"
-set "L11=%BLU%  i::::::::zt33F%YLW% AEEEtttt::::ztF   %RST%"
-set "L12=%BLU% ;:::::::::t33V%YLW% ;EEEttttt::::t3     %RST%"
-set "L13=%BLU% E::::::::zt33L%YLW% @EEEtttt::::z3F    %RST%"
+set "L4=%RED%      ;tt:::tt333EE7%GRN% ;EEEEEEttttt33#     %RST%"
+set "L5=%RED%     :Et:::zt333EEQ.%GRN% $EEEEEttttt33QL     %RST%"
+set "L6=%RED%     it::::tt333EEF%GRN% @EEEEEEttttt33F     %RST%"
+set "L7=%RED%    ;3=*^```"*4EEV%GRN% :EEEEEEttttt33@.       %RST%"
+set "L8=%BLU%    ,.=::::^^!t=., %RED%`%GRN% @EEEEEEtttz33QF      %RST%"
+set "L9=%BLU%   ;::::::::zt33)%GRN%   "4EEEtttji3P*        %RST%"
+set "L10=%BLU%  :t::::::::tt33.%YLW%:Z3z..%GRN%  ``%YLW% ,..g.        %RST%"
+set "L11=%BLU%  i::::::::zt33F%YLW% AEEEtttt::::ztF         %RST%"
+set "L12=%BLU% ;:::::::::t33V%YLW% ;EEEttttt::::t3          %RST%"
+set "L13=%BLU% E::::::::zt33L%YLW% @EEEtttt::::z3F          %RST%"
 set "L14=%BLU%{3=*^```"*4E3)%YLW% ;EEEtttt:::::tZ`         %RST%"
 set "L15=%BLU%             `%YLW% :EEEEtttt::::z7         %RST%"
-set "L16=%YLW%                 "VEzjt:;;z>*`           %RST%"
+set "L16=%YLW%                 "VEzjt:;;z>*`            %RST%"
 set "L17="
 set "L18="
 set "L19="
@@ -295,25 +298,25 @@ set "I18="
 set "I19="
 
 :: 5. Output beautiful columns
-echo %L1%  %I1%
-echo %L2%  %I2%
-echo %L3%  %I3%
-echo %L4%  %I4%
-echo %L5%  %I5%
-echo %L6%  %I6%
-echo %L7%  %I7%
-echo %L8%  %I8%
-echo %L9%  %I9%
-echo %L10% %I10%
-echo %L11% %I11%
-echo %L12% %I12%
-echo %L13% %I13%
-echo %L14% %I14%
-echo %L15% %I15%
-echo %L16% %I16%
-echo %L17% %I17%
-echo %L18% %I18%
-echo %L19% %I19%
+echo(%L1%  %I1%
+echo(%L2%  %I2%
+echo(%L3%  %I3%
+echo(%L4%  %I4%
+echo(%L5%  %I5%
+echo(%L6%  %I6%
+echo(%L7%  %I7%
+echo(%L8%  %I8%
+echo(%L9%  %I9%
+echo(%L10% %I10%
+echo(%L11% %I11%
+echo(%L12% %I12%
+echo(%L13% %I13%
+echo(%L14% %I14%
+echo(%L15% %I15%
+echo(%L16% %I16%
+echo(%L17% %I17%
+echo(%L18% %I18%
+echo(%L19% %I19%
 goto :eof
 
 :install_cmd
